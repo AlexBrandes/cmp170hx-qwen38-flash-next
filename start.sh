@@ -10,7 +10,6 @@ cd "$(dirname "$0")"
 IMAGE=${IMAGE:-${ENGINE_IMAGE:-$ENGINE_IMAGE_LOCAL}}
 MODELS_DIR=${MODELS_DIR:-$PWD/models}
 MODEL_DIR=${MODEL_DIR:-$MODELS_DIR/Qwen3.8-Flash-Next-W4A16-AutoRound}
-DRAFT_HEAD=${DRAFT_HEAD:-$MODELS_DIR/draft-head-w4a16.safetensors}
 GPUS=${GPUS:-0,1}
 HOST=${HOST:-127.0.0.1}
 PORT=${PORT:-8000}
@@ -21,9 +20,6 @@ READY_TIMEOUT=${READY_TIMEOUT:-1800}
 
 die() { echo "start.sh: $*" >&2; exit 1; }
 [ -f "$MODEL_DIR/config.json" ] || die "no model at $MODEL_DIR (run ./download.sh)"
-[ -f "$DRAFT_HEAD" ] || die "no draft head at $DRAFT_HEAD (run ./download.sh)"
-[ "$(sha256sum "$DRAFT_HEAD" | cut -d' ' -f1)" = "$DRAFT_HEAD_SHA256" ] \
-  || die "$DRAFT_HEAD does not match DRAFT_HEAD_SHA256"
 [ "$(echo "$GPUS" | tr ',' '\n' | grep -c .)" = 2 ] || die "GPUS must name two cards, e.g. 0,1"
 docker image inspect "$IMAGE" >/dev/null 2>&1 || docker pull "$IMAGE"
 
@@ -35,15 +31,10 @@ docker rm -f "$NAME" >/dev/null 2>&1 || true
 docker run -d --name "$NAME" --gpus "\"device=$GPUS\"" --shm-size 1g \
   -p "$HOST:$PORT:8000" \
   -e VLLM_USE_BREAKABLE_CUDAGRAPH=1 \
-  -e VLLM_MTP_DRAFT_HEAD_PATH=/drafthead/head-w4a16.safetensors \
-  -e VLLM_PLE_MMAP=1 \
-  -e VLLM_PLE_MMAP_RANDOM=1 \
   -e FLASHINFER_DISABLE_VERSION_CHECK=1 \
   -e VLLM_PP_LAYER_PARTITION=26,22 \
-  -e VLLM_PLE_HOST_IDS=1 \
   -e VLLM_MIXED_PREFILL_CHUNK=560 \
   -v "$MODEL_DIR:/models/Qwen3.8-Flash-Next-W4A16-AutoRound:ro" \
-  -v "$DRAFT_HEAD:/drafthead/head-w4a16.safetensors:ro" \
   "$IMAGE" \
   vllm serve /models/Qwen3.8-Flash-Next-W4A16-AutoRound \
     --pipeline-parallel-size 2 \
@@ -65,7 +56,8 @@ docker run -d --name "$NAME" --gpus "\"device=$GPUS\"" --shm-size 1g \
     --trust-remote-code \
     --no-enable-flashinfer-autotune \
     "-cc=$(tr -d ' \n' < config/compilation.json)" \
-    '--speculative-config={"method":"mtp","num_speculative_tokens":5}' \
+    '--engram-config={"disk_offload":true}' \
+    '--speculative-config={"method":"mtp","num_speculative_tokens":5,"draft_lm_head_quantization":"nvfp4"}' \
   >/dev/null
 
 echo "started $NAME ($IMAGE) on $HOST:$PORT; loading (several minutes)..."

@@ -1,24 +1,27 @@
-This recipe (scripts, docs, tools/quantize_lm_head.py) is MIT-licensed; see
+This recipe (scripts and docs) is MIT-licensed; see
 LICENSE. It builds on, and runs, the following work under their own terms.
 
 Engine
-- vLLM (https://github.com/vllm-project/vllm), Apache-2.0. The engine is the
-  fork https://github.com/AlexBrandes/vllm, branch cmp170hx-qwen38-flash-next
-  (v0.30.0 plus the commits listed in README.md), also Apache-2.0. The image
-  is the official vllm/vllm-openai:v0.30.0 image plus the fork's changed files.
-- The fork's pipeline-parallel and NVMe-mmapped PLE support builds on two
-  community CMP 170HX projects:
+- vLLM (https://github.com/vllm-project/vllm), Apache-2.0. The image is
+  upstream vLLM's wheel for commit a0d7356b98, the fork's vLLM branch over it and
+  the vllm-cmp170hx plugin, all from https://github.com/AlexBrandes/vllm, also
+  Apache-2.0 (see that repository's NOTICE), on NVIDIA's CUDA 13.0 Ubuntu 24.04
+  base image.
+- The plugin's layout, startup guard and seam tooling are adapted from
+  vllm-sm80 by Morrowmake (https://github.com/Morrowmake/vllm-cmp170hx),
+  Apache-2.0.
+- The threaded PLE row reader follows the approach of two community CMP 170HX
+  projects:
   - polyuij42-del/qwen38-flash-next-w4a16-cmp170hx, MIT (copyright notice in
     licenses/polyuij42-del-qwen38-flash-next-w4a16-cmp170hx.LICENSE);
   - nguyenthimy2022kg-alt/Qwen-Flash-SM80-170HX, Apache-2.0.
-- The QSA prepare fusion is a backport of vllm-project/vllm#57097.
 
 Model
 - Qwen3.8-Flash-Next by the Qwen team, under its license (copy in
   licenses/Qwen3.8-Flash-Next.LICENSE); the W4A16 checkpoint
   Intel/Qwen3.8-Flash-Next-W4A16-AutoRound was made with intel/auto-round
   (Apache-2.0). This repository ships no weights: download.sh fetches the
-  checkpoint and derives the MTP draft head from it locally.
+  checkpoint.
 
 Benchmarks
 - Speed tables use the sparkDash protocol (MiaAI-Lab/sparkDash, commit
