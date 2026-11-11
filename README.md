@@ -1,17 +1,13 @@
 # Qwen3.8-Flash-Next on 2× CMP 170HX
 
-**Qwen3.8-Flash-Next (W4A16) on two NVIDIA CMP 170HX cards, pipeline-parallel
-with vLLM: 234 tok/s for one user (code), 827 tok/s across eight, 6,200–7,400
-tok/s prefill from 4k to 64k prompts, the full 262,144-token window, image and
-video input, and HumanEval 157/164, GSM8K 1,272/1,319.** Measured on PCIe Gen2 x4
-links.
+This runs Qwen3.8-Flash-Next on two NVIDIA CMP 170HX cards, with the model split
+between them. It uses vLLM with Intel's 4-bit version of the model and serves an
+OpenAI-compatible API that accepts text, images and video. The model's large
+N-gram table (about 102 GB) stays on the NVMe drive and is read as needed, so the
+drive matters; see [Requirements](#requirements).
 
-Serves [Intel/Qwen3.8-Flash-Next-W4A16-AutoRound](https://huggingface.co/Intel/Qwen3.8-Flash-Next-W4A16-AutoRound)
-with upstream vLLM and the [vllm-cmp170hx](https://github.com/AlexBrandes/vllm)
-plugin in a container: an OpenAI-compatible API with text, image and video
-input, native MTP speculative decoding, reasoning and tool calls. The ~102 GB
-N-gram (PLE) table stays on the NVMe drive and is read through the page cache;
-everything else is on the two GPUs.
+One user gets around 160–265 tokens per second, depending on what's being
+generated. The full numbers and quality checks are under [Benchmarks](#benchmarks).
 
 ```bash
 git clone https://github.com/AlexBrandes/cmp170hx-qwen38-flash-next
