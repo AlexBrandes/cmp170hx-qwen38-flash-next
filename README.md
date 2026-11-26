@@ -152,7 +152,11 @@ this model uses:
 `start.sh` runs it through `sudo`; `HOST_TUNE=0` skips it.
 
 - **170 W power limit** on both cards.
-- **16 KB readahead** on the model's drive. PLE rows are small random reads.
+- **16 KB readahead** on the drive serving the PLE table. PLE rows are small
+  random reads. If the checkpoint and table live on different drives, set
+  `PLE_READAHEAD_PATH` in `.env` to the table's host file path or its directory.
+  The setting selects the device to tune. Configure the table's mount separately
+  if your layout requires it. By default the device is selected from `MODEL_DIR`.
 - **Drop the page cache and compact memory before start.** The engine's pinned
   host buffers then land on contiguous pages; without it decode often starts in
   a mode about 10% slower. It empties the whole page cache, so other workloads

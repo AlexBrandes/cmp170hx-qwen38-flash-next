@@ -24,7 +24,7 @@ die() { echo "start.sh: $*" >&2; exit 1; }
 docker image inspect "$IMAGE" >/dev/null 2>&1 || docker pull "$IMAGE"
 
 if [ "$HOST_TUNE" = 1 ]; then
-  sudo ./host-tune.sh "$GPUS" "$MODEL_DIR"
+  sudo ./host-tune.sh "$GPUS" "$MODEL_DIR" "${PLE_READAHEAD_PATH:-$MODEL_DIR}"
 fi
 
 docker rm -f "$NAME" >/dev/null 2>&1 || true
